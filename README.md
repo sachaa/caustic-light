@@ -265,6 +265,11 @@ python3 tools/make-loop.py track.mp3 --out loops/
 
 ## Examples
 
+Try the [live playground](https://sachaa.github.io/caustic-light/) or browse
+the [examples](https://sachaa.github.io/caustic-light/examples/). The
+`.github/workflows/pages.yml` workflow publishes them to GitHub Pages on every
+push to the default branch.
+
 The `examples` folder has a gallery, a preset switcher, light over page content,
 the hover effects, music-reactive light and the full playground. Serve the
 repository root and open the gallery:
