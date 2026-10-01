@@ -1,0 +1,55 @@
+{
+  "name": "caustic-light",
+  "version": "1.0.0",
+  "description": "A web component that renders physically based caustic light (the webs and ribbons that glass, water and polished metal throw onto a wall) with WebGL2. Gradient maps, hover effects and music-reactive light. No dependencies.",
+  "keywords": [
+    "caustics",
+    "web-component",
+    "custom-element",
+    "webgl",
+    "webgl2",
+    "shader",
+    "light",
+    "background",
+    "animation",
+    "visual-effects",
+    "audio-reactive",
+    "generative"
+  ],
+  "author": "Sacha",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "src/caustic-light.js",
+  "browser": "dist/caustic-light.min.js",
+  "unpkg": "dist/caustic-light.min.js",
+  "jsdelivr": "dist/caustic-light.min.js",
+  "types": "types/caustic-light.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/caustic-light.d.ts",
+      "default": "./src/caustic-light.js"
+    },
+    "./min": "./dist/caustic-light.min.js",
+    "./crossfade-loop": "./src/crossfade-loop.js",
+    "./crossfade-loop/min": "./dist/crossfade-loop.min.js",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": true,
+  "files": [
+    "src",
+    "dist",
+    "types",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "check": "node --check src/caustic-light.js && node --check src/crossfade-loop.js",
+    "build": "node tools/build.js",
+    "start": "python3 -m http.server 8000 --bind 127.0.0.1",
+    "prepublishOnly": "npm run check && npm run build"
+  },
+  "devDependencies": {
+    "terser": "^5.36.0"
+  }
+}

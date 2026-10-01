@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caustic-light examples</title>
+<style>
+  :root { color-scheme: dark; --ink: #ece7db; --ink-2: #a39e92; --line: rgba(236, 231, 219, .14); --ground: #0c0b0a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: relative; min-height: 62vh; display: grid; place-items: center; overflow: hidden; padding: 64px 20px; text-align: center; }
+  header caustic-light { position: absolute; inset: 0; }
+  header .copy { position: relative; max-width: 40rem; }
+  h1 { margin: 0 0 12px; font: 600 clamp(40px, 7vw, 76px)/1 Georgia, "Times New Roman", serif; letter-spacing: -.02em; }
+  header p { margin: 0 auto; max-width: 34rem; color: #e4ded2; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
+  header h1 { text-shadow: 0 2px 24px rgba(0, 0, 0, .4); }
+  main { max-width: 960px; margin: 0 auto; padding: 48px 20px 80px; }
+  h2 { font: 600 13px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 48px; }
+  a.card { display: block; padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 6px; color: inherit; text-decoration: none; background: rgba(255, 255, 255, .02); }
+  a.card:hover, a.card:focus-visible { border-color: var(--ink-2); outline: none; }
+  a.card b { display: block; font-size: 17px; margin-bottom: 4px; }
+  a.card span { color: var(--ink-2); font-size: 14px; }
+  pre { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 6px; background: #070707; overflow-x: auto; font: 13px/1.6 ui-monospace, "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <caustic-light preset="silk" hover="calm"></caustic-light>
+  <div class="copy">
+    <h1>caustic-light</h1>
+    <p>Physically based caustic light for any web page. The webs and ribbons that glass, water and polished metal throw onto a wall, in one dependency-free web component.</p>
+  </div>
+</header>
+<main>
+  <h2>Examples</h2>
+  <div class="grid">
+    <a class="card" href="basic.html"><b>Presets as a background</b><span>A full-page light behind a headline, with a preset switcher.</span></a>
+    <a class="card" href="overlay.html"><b>Light on content</b><span>A transparent overlay with a gradient map, falling across a page.</span></a>
+    <a class="card" href="interactive.html"><b>Hover effects</b><span>Ripple, lens, calm, swirl, focus, tilt and glow, plus ripples from code.</span></a>
+    <a class="card" href="music.html"><b>Music-reactive light</b><span>A looping ambient track whose dynamics move the light.</span></a>
+    <a class="card" href="playground.html"><b>Playground</b><span>Every parameter, live, with copy-ready embed code.</span></a>
+  </div>
+  <h2>Quick start</h2>
+<pre>&lt;script src="https://cdn.jsdelivr.net/npm/caustic-light@1/dist/caustic-light.min.js"&gt;&lt;/script&gt;
+
+&lt;section style="position:relative; height:70vh"&gt;
+  &lt;caustic-light preset="pool" style="position:absolute; inset:0"&gt;&lt;/caustic-light&gt;
+&lt;/section&gt;</pre>
+</main>
+<script src="../src/caustic-light.js"></script>
+</body>
+</html>

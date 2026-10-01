@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caustic Light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the live component fills the window; a gallery-style wall label sits top-left; the instrument panel docks right (bottom sheet on phones). Deliberately one dark look: the page exists to show light. */
+:root{
+  --ground:#0a0a0c;
+  --glass:rgba(14,14,17,.84);
+  --solid:#111114;
+  --hair:rgba(234,228,214,.10);
+  --hair-2:rgba(234,228,214,.22);
+  --ink:#ece7db;
+  --ink-2:#a39e92;
+  --ink-3:#77736a;
+  --beam:#f0dcae;
+  --paper:#eeeae1;
+  --paper-ink:#1c1b18;
+  --paper-ink-2:#5d5950;
+  --paper-rule:rgba(28,27,24,.16);
+  --code-bg:#08080a;
+  --display:'Bodoni Moda','Didot','Bodoni 72',Georgia,serif;
+  --ui:'Geist','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 13px/1.45 var(--ui);overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;z-index:0}
+
+.sample{position:fixed;z-index:1;left:0;top:0;bottom:0;right:360px;display:grid;place-content:center;justify-items:center;padding:0 24px;pointer-events:none;text-align:center}
+.sample .eyebrow{font:500 11px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:0 0 18px}
+.sample h2{font:italic 500 clamp(40px,7vw,92px)/.95 var(--display);margin:0;color:#fff;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.35)}
+.sample p{max-width:36ch;margin:18px auto 0;color:rgba(255,255,255,.8);font-size:15px}
+.sample .cta{display:inline-block;margin-top:26px;padding:11px 18px;border:1px solid rgba(255,255,255,.55);border-radius:2px;font:500 11px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:#fff}
+
+.placard{position:fixed;z-index:2;left:calc(16px + env(safe-area-inset-left,0px));top:calc(16px + env(safe-area-inset-top,0px));width:300px;max-width:calc(100vw - 32px);box-sizing:border-box;background:var(--paper);color:var(--paper-ink);padding:13px 16px 12px;box-shadow:0 1px 0 rgba(0,0,0,.3),0 14px 34px rgba(0,0,0,.34);pointer-events:none}
+.placard .kicker{display:flex;justify-content:space-between;gap:8px;font:500 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--paper-ink-2)}
+.placard h1{font:italic 500 27px/1.05 var(--display);margin:9px 0 5px;letter-spacing:-.01em;text-wrap:balance}
+.placard .note{font:400 12.5px/1.4 var(--ui);text-wrap:pretty}
+.placard .spec{font:400 10.5px/1.5 var(--mono);color:var(--paper-ink-2);margin-top:10px;padding-top:8px;border-top:1px solid var(--paper-rule);font-variant-numeric:tabular-nums}
+
+#panel{position:fixed;z-index:3;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:336px;display:flex;flex-direction:column;background:var(--glass);-webkit-backdrop-filter:blur(16px) saturate(120%);backdrop-filter:blur(16px) saturate(120%);border:1px solid var(--hair);border-radius:6px;overflow:hidden}
+.bar{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.bar .ttl{font:500 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin-right:auto}
+.tb{appearance:none;background:transparent;color:var(--ink);border:1px solid var(--hair-2);border-radius:3px;font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;cursor:pointer;white-space:nowrap}
+.tb:hover{border-color:var(--ink-2)}
+.tb[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:1px solid var(--beam);outline-offset:2px}
+.scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--hair-2) transparent}
+.sec-h{font:500 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);padding:14px 14px 10px;margin:0}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);border:1px solid var(--hair);margin:0 14px 14px}
+.presets button{appearance:none;background:var(--solid);border:0;color:var(--ink);text-align:left;padding:9px 10px 8px;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
+.presets button:hover{background:#18181c}
+.presets .nm{font:italic 500 15px/1.1 var(--display)}
+.presets .tg{font:400 10px/1.2 var(--mono);color:var(--ink-3)}
+.presets .sw{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:0}
+.presets button[aria-pressed="true"]{background:var(--ink);color:var(--ground)}
+.presets button[aria-pressed="true"] .tg{color:#57544d}
+details.grp{border-top:1px solid var(--hair)}
+details.grp summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:13px 14px;font:500 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary::after{content:'+';font:400 13px/1 var(--mono);color:var(--ink-3)}
+details.grp[open] summary::after{content:'\2212'}
+.rows{display:flex;flex-direction:column;gap:11px;padding:0 14px 16px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:5px 10px}
+.row label,.row .lbl{font-size:12px;color:var(--ink)}
+.row .hint{grid-column:1/-1;font-size:11px;color:var(--ink-3);margin-top:-2px}
+.row output{font:400 11px/1 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.row input[type=range],.row .seg{grid-column:1/-1}
+.row.color{align-items:center}
+.gstops{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:4px}
+.gstops label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;color:var(--ink-3)}
+.gstops label:last-child{align-items:flex-end}
+.gbar{height:10px;border-radius:2px;border:1px solid var(--hair-2);background:linear-gradient(90deg,var(--ga,#333),var(--gb,#fff))}
+input[type=color]{-webkit-appearance:none;appearance:none;width:44px;height:22px;border:1px solid var(--hair-2);border-radius:3px;background:transparent;padding:0;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+input[type=color]::-webkit-color-swatch{border:0;border-radius:2px}
+input[type=color]::-moz-color-swatch{border:0;border-radius:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;border-radius:1px;background:linear-gradient(to right,var(--beam) 0 var(--fill,50%),var(--hair-2) var(--fill,50%) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--ground);margin-top:-5px;box-shadow:0 0 0 1px var(--hair-2)}
+input[type=range]::-moz-range-track{height:2px;background:var(--hair-2)}
+input[type=range]::-moz-range-progress{height:2px;background:var(--beam)}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;background:var(--ink);border:2px solid var(--ground)}
+input[type=range]:focus{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--beam)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--hair-2);border-radius:3px;overflow:hidden}
+.seg button{flex:1 1 auto;appearance:none;background:transparent;color:var(--ink-2);border:0;border-right:1px solid var(--hair);font:500 11.5px/1 var(--ui);padding:7px 8px;cursor:pointer;white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-checked="true"]{background:var(--ink);color:var(--ground)}
+.chips{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.chips button{appearance:none;background:transparent;color:var(--ink-2);border:1px solid var(--hair-2);border-radius:3px;font:500 11.5px/1 var(--ui);padding:7px 10px;cursor:pointer}
+.chips button:hover{color:var(--ink);border-color:var(--ink-2)}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.fxlist{grid-column:1/-1;margin:2px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink-2)}
+.fxlist b{font-weight:500;color:var(--ink)}
+.music{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
+.music .src{display:flex;gap:6px;flex-wrap:wrap}
+.row label.tb{font:500 10px/1 var(--mono);color:var(--ink);cursor:pointer}
+.music .now{display:flex;align-items:center;gap:10px;min-width:0}
+.music .now .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 11px/1.3 var(--mono);color:var(--ink-2)}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-items:end;height:34px}
+.meter span{display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:3px;font:400 9.5px/1 var(--mono);color:var(--ink-3);text-align:center}
+.meter i{display:block;height:4%;background:var(--beam);opacity:.85;border-radius:1px;transition:height .1s linear}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tog{appearance:none;width:30px;height:16px;border-radius:8px;border:1px solid var(--hair-2);background:transparent;position:relative;cursor:pointer;padding:0;align-self:center}
+.tog span{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:var(--ink-2);transition:left .15s}
+.tog[aria-pressed="true"]{background:var(--beam);border-color:var(--beam)}
+.tog[aria-pressed="true"] span{left:16px;background:var(--ground)}
+.embed{padding:0 14px 16px;display:flex;flex-direction:column;gap:10px}
+.embed pre{margin:0;background:var(--code-bg);border:1px solid var(--hair);border-radius:4px;padding:10px 11px;font:400 11px/1.55 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre}
+.embed pre .a{color:var(--beam)}
+.embed pre .t{color:var(--ink-2)}
+.embed .btns{display:flex;gap:6px;flex-wrap:wrap}
+.embed p{margin:0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
+.embed code{font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+.stats{border-top:1px solid var(--hair);padding:9px 14px 10px;font:400 10.5px/1.5 var(--mono);color:var(--ink-3);display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.stats b{font-weight:400;color:var(--ink-2)}
+#show{position:fixed;z-index:3;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.toast{position:fixed;z-index:4;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:9px 12px;border-radius:3px;pointer-events:none}
+.hint-b{position:fixed;z-index:1;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font:400 10.5px/1.4 var(--mono);color:rgba(236,231,219,.6);text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
+body.panel-off .sample{right:0}
+@media (max-width:720px){
+  #panel{top:auto;left:calc(8px + env(safe-area-inset-left,0px));right:calc(8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;height:min(52vh,480px)}
+  #show{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .placard{padding:10px 12px;width:auto;right:calc(16px + env(safe-area-inset-right,0px))}
+  .placard h1{font-size:21px;margin:7px 0 3px}
+  .placard .spec{margin-top:6px;padding-top:6px}
+  .sample{right:0}
+  .hint-b{display:none}
+}
+@media (prefers-reduced-motion:reduce){.tog span{transition:none}}
+</style>
+</head>
+<body>
+
+
+<caustic-light id="stage" preset="silk" style="position:fixed;inset:0"></caustic-light>
+
+<div class="sample" id="sample" hidden aria-hidden="true">
+  <p class="eyebrow">Northlight Glass Studio</p>
+  <h2>Light, bent into lines.</h2>
+  <p>Sample page content sitting on top of a caustic-light background, to judge contrast and legibility.</p>
+  <span class="cta">View the collection</span>
+</div>
+
+<div class="placard">
+  <div class="kicker"><span>caustic-light</span><span id="pNo">Preset 1 of 6</span></div>
+  <h1 id="pName">Silk ribbons</h1>
+  <div class="note" id="pNote"></div>
+  <div class="spec" id="pSpec"></div>
+</div>
+
+<aside id="panel" aria-label="Caustic controls">
+  <div class="bar">
+    <button type="button" class="tb" id="btnPause" aria-pressed="false">Pause</button>
+    <button type="button" class="tb" id="btnSeed">New seed</button>
+    <button type="button" class="tb" id="btnReset">Reset</button>
+    <button type="button" class="tb" id="btnHide">Hide</button>
+  </div>
+  <div class="scroll">
+    <h2 class="sec-h">Presets</h2>
+    <div class="presets" id="presets"></div>
+    <details class="grp" open><summary>Optic</summary><div class="rows" id="rows-optic"></div></details>
+    <details class="grp" open><summary>Light</summary><div class="rows" id="rows-light"></div></details>
+    <details class="grp" open><summary>Hover</summary><div class="rows" id="rows-hover"></div></details>
+    <details class="grp" open><summary>Music</summary><div class="rows" id="rows-music"></div></details>
+    <details class="grp"><summary>Finish</summary><div class="rows" id="rows-finish"></div></details>
+    <details class="grp" open><summary>Embed</summary>
+      <div class="embed">
+        <pre id="code" aria-label="Embed code"></pre>
+        <div class="btns">
+          <button type="button" class="tb" id="btnCopyTag">Copy tag</button>
+          <button type="button" class="tb" id="btnCopySrc">Copy caustic-light.js</button>
+        </div>
+        <p>Install with <code>npm i caustic-light</code> and import it once, or load it from a CDN as shown. The element sizes to its box. Use <code>background="transparent"</code> to lay the light over existing content.</p>
+      </div>
+    </details>
+  </div>
+  <div class="stats"><span id="stRays">—</span><span id="stState">—</span></div>
+</aside>
+<button type="button" class="tb" id="show" hidden>Controls</button>
+<div class="hint-b">Space pauses · H hides the panel</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="caustic-light-src" src="../src/caustic-light.js"></script>
+<script>
+'use strict';
+(() => {
+const el = document.getElementById('stage');
+const CL = window.CausticLight;
+if (!CL) return;
+const PRE = CL.presets, DEF = CL.defaults, ATTR = CL.attributes;
+const IDS = Object.keys(PRE);
+const $ = id => document.getElementById(id);
+
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('caustic-light.' + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem('caustic-light.' + k, JSON.stringify(v)); } catch(e){} }
+};
+
+let presetId = 'silk';
+let over = {};
+const opts = () => el.options;
+const baseOf = id => Object.assign({}, DEF, PRE[id] || {});
+
+const num = (v, d) => (+v).toFixed(d).replace(/\.?0+$/, '') || '0';
+const pct = v => `${Math.round(v*100)}%`;
+const CONTROLS = {
+  optic: [
+    {k:'surface', t:'seg', label:'Surface', opts:[['Flow','flow'],['Ripple','ripple'],['Hammered','hammered'],['Lens','lens']]},
+    {k:'mode', t:'seg', label:'Optic', opts:[['Mirror','reflect'],['Glass / water','refract']]},
+    {k:'ior', t:'range', label:'Refractive index', min:1.0, max:2.5, step:0.001, fmt:v => `n ${(+v).toFixed(3)}`, show:o => o.mode === 'refract'},
+    {k:'distance', t:'range', label:'Throw distance', min:0, max:6, step:0.01, fmt:v => num(v,2), hint:'How far the wall is from the optic. Longer throws fold the light into sharper lines.'},
+    {k:'relief', t:'range', label:'Relief', min:0, max:1.5, step:0.005, fmt:v => num(v,3)},
+    {k:'scale', t:'range', label:'Bump density', min:0.2, max:20, step:0.05, fmt:v => num(v,2)},
+    {k:'detail', t:'range', label:'Detail', min:1, max:6, step:1, fmt:v => `${v} octave${v > 1 ? 's' : ''}`},
+    {k:'roughness', t:'range', label:'Fine texture', min:0, max:1, step:0.01, fmt:pct},
+    {k:'warp', t:'range', label:'Warp', min:0, max:2, step:0.01, fmt:v => num(v,2)},
+    {k:'speed', t:'range', label:'Flow speed', min:0, max:3, step:0.01, fmt:v => +v === 0 ? 'still' : `${num(v,2)}×`},
+  ],
+  light: [
+    {k:'color', t:'color', label:'Light colour', show:o => !o.gradient},
+    {k:'gradient', t:'gradient', label:'Gradient map'},
+    {k:'gradientMid', t:'range', label:'Crossover', min:0.05, max:0.95, step:0.01, fmt:pct, show:o => !!o.gradient, hint:'Lower hands the bright colour to fainter light; higher keeps it for the brightest folds.'},
+    {k:'intensity', t:'range', label:'Intensity', min:0, max:20, step:0.01, fmt:v => num(v,2), curve:2.2},
+    {k:'contrast', t:'range', label:'Contrast', min:0.3, max:4, step:0.01, fmt:v => num(v,2)},
+    {k:'dispersion', t:'range', label:'Dispersion', min:0, max:1, step:0.01, fmt:v => +v === 0 ? 'off' : pct(v), hint:'Splits the light into spectral samples, so folds pick up rainbow edges.'},
+    {k:'beam', t:'range', label:'Beam radius', min:0, max:3, step:0.01, fmt:v => +v === 0 ? 'flood' : num(v,2)},
+    {k:'beamX', t:'range', label:'Beam across', min:-1, max:1, step:0.01, fmt:v => num(v,2), show:o => o.beam > 0 || o.spread > 0},
+    {k:'beamY', t:'range', label:'Beam up / down', min:-1, max:1, step:0.01, fmt:v => num(v,2), show:o => o.beam > 0 || o.spread > 0},
+    {k:'spread', t:'range', label:'Spread', min:0, max:6, step:0.01, fmt:v => num(v,2), hint:'Diverging light, as from a lamp or laser: the pattern fans out from the beam centre.'},
+  ],
+  hover: [
+    {k:'hover', t:'multi', label:'Effects', opts:[['Ripple','ripple'],['Lens','lens'],['Calm','calm'],['Swirl','swirl'],['Focus','focus'],['Tilt','tilt'],['Glow','glow']]},
+    {k:'hoverStrength', t:'range', label:'Strength', min:0, max:3, step:0.01, fmt:v => `${num(v,2)}×`, show:o => !!o.hover},
+    {k:'hoverRadius', t:'range', label:'Radius', min:0.05, max:1.5, step:0.01, fmt:v => num(v,2), show:o => !!o.hover && o.hover !== 'ripple' && o.hover !== 'tilt'},
+  ],
+  music: [
+    {k:'_music', t:'music', local:true},
+    {k:'audioReact', t:'range', label:'Reaction', min:0, max:2, step:0.01, fmt:v => +v === 0 ? 'off' : `${num(v,2)}×`, show:o => !!o.audio, hint:'How much the music moves the light: swells brighten and speed up the flow, low notes deepen the relief, highs lift the glow.'},
+    {k:'audioVolume', t:'range', label:'Volume', min:0, max:1, step:0.01, fmt:pct, show:o => !!o.audio},
+    {k:'audioCrossfade', t:'range', label:'Loop crossfade', min:0, max:12, step:0.1, fmt:v => `${num(v,1)} s`, show:o => !!o.audio},
+    {k:'audioControls', t:'toggle', label:'Play button on the light', show:o => !!o.audio},
+    {k:'audioAutoplay', t:'toggle', label:'Start on the first click or key press', show:o => !!o.audio},
+  ],
+  finish: [
+    {k:'background', t:'color', label:'Wall colour', transparent:true},
+    {k:'glow', t:'range', label:'Glow', min:0, max:3, step:0.01, fmt:v => num(v,2)},
+    {k:'softness', t:'range', label:'Softness', min:0, max:6, step:0.05, fmt:v => `${num(v,2)} px`},
+    {k:'trail', t:'range', label:'Trail', min:0, max:0.95, step:0.01, fmt:pct},
+    {k:'grain', t:'range', label:'Grain', min:0, max:0.2, step:0.001, fmt:v => num(v,3)},
+    {k:'quality', t:'seg', label:'Quality', opts:[['Auto','auto'],['Low','low'],['Medium','medium'],['High','high']]},
+    {k:'_sample', t:'toggle', label:'Show sample page content', local:true},
+  ],
+};
+const FX_TEXT = {
+  ripple: 'rings spread from the pointer as it moves; click to drop a bigger one',
+  lens: 'a soft lens follows the pointer and gathers light into a ring',
+  calm: 'the surface goes still under the pointer and the light relaxes',
+  swirl: 'the pattern twists around the pointer, more when it moves fast',
+  focus: 'lines sharpen and multiply under the pointer',
+  tilt: 'the light source leans toward the pointer, a gentle parallax',
+  glow: 'a soft pool of extra light under the pointer',
+};
+const ALL = Object.values(CONTROLS).flat();
+const local = { _sample: false };
+function getV(c){ return c.local ? local[c.k] : opts()[c.k]; }
+function apply(k, v){
+  const b = baseOf(presetId);
+  if (JSON.stringify(v) === JSON.stringify(b[k])) delete over[k]; else over[k] = v;
+  el.setOptions({[k]: v});
+}
+function fill(inp){ inp.style.setProperty('--fill', ((inp.value - inp.min)/(inp.max - inp.min)*100) + '%'); }
+function toSlider(c, v){ return c.curve ? Math.pow(v/c.max, 1/c.curve)*c.max : v; }
+function fromSlider(c, s){ return c.curve ? Math.pow(s/c.max, c.curve)*c.max : s; }
+function makeControl(c){
+  const row = document.createElement('div'); row.className = 'row';
+  const id = 'c-' + c.k;
+  if (c.t === 'range'){
+    row.innerHTML = `<label for="${id}">${c.label}</label><output id="o-${c.k}" for="${id}"></output><input type="range" id="${id}" min="${c.min}" max="${c.max}" step="${c.step}">` + (c.hint ? `<div class="hint">${c.hint}</div>` : '');
+    const inp = row.querySelector('input'), out = row.querySelector('output');
+    c.sync = () => { const v = getV(c); inp.value = toSlider(c, v); out.textContent = c.fmt(v); fill(inp); };
+    inp.addEventListener('input', () => {
+      let v = fromSlider(c, parseFloat(inp.value));
+      if (c.step >= 1) v = Math.round(v); else v = +v.toFixed(4);
+      apply(c.k, v); out.textContent = c.fmt(v); fill(inp); changed(false);
+    });
+  } else if (c.t === 'seg'){
+    row.innerHTML = `<span class="lbl" id="l-${c.k}">${c.label}</span><div class="seg" role="radiogroup" aria-labelledby="l-${c.k}"></div>`;
+    const seg = row.querySelector('.seg');
+    c.opts.forEach(([name, val]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.id = `${id}-${val}`; b.textContent = name;
+      b.addEventListener('click', () => { apply(c.k, val); changed(true); });
+      seg.appendChild(b);
+    });
+    c.sync = () => { const v = getV(c); [...seg.children].forEach((b, i) => b.setAttribute('aria-checked', String(c.opts[i][1] === v))); };
+  } else if (c.t === 'multi'){
+    row.innerHTML = `<span class="lbl" id="l-${c.k}">${c.label}</span><output id="o-${c.k}"></output><div class="chips" role="group" aria-labelledby="l-${c.k}"></div><ul class="fxlist" id="fx-${c.k}"></ul>`;
+    const box = row.querySelector('.chips'), list = row.querySelector('.fxlist'), out = row.querySelector('output');
+    c.opts.forEach(([name, val]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.id = `${id}-${val}`; b.textContent = name; b.setAttribute('aria-pressed', 'false');
+      b.title = FX_TEXT[val];
+      b.addEventListener('click', () => {
+        const cur = new Set(String(getV(c) || '').split(' ').filter(Boolean));
+        if (cur.has(val)) cur.delete(val); else cur.add(val);
+        apply(c.k, c.opts.map(o => o[1]).filter(v => cur.has(v)).join(' '));
+        changed(true);
+      });
+      box.appendChild(b);
+    });
+    c.sync = () => {
+      const cur = new Set(String(getV(c) || '').split(' ').filter(Boolean));
+      [...box.children].forEach((b, i) => b.setAttribute('aria-pressed', String(cur.has(c.opts[i][1]))));
+      out.textContent = cur.size ? `${cur.size} on` : 'off';
+      list.innerHTML = cur.size
+        ? c.opts.filter(o => cur.has(o[1])).map(o => `<li><b>${o[0]}</b> · ${FX_TEXT[o[1]]}</li>`).join('')
+        : '<li>Off by default in the component. Pick any combination, then move the pointer over the light.</li>';
+    };
+  } else if (c.t === 'music'){
+    row.innerHTML = `<div class="music">
+      <div class="src"><button type="button" class="tb" id="mDemo">Demo track</button><label class="tb" for="mFile" style="display:inline-flex;align-items:center">Choose a file…</label><input type="file" id="mFile" class="sr" accept="audio/*,.mp3"><button type="button" class="tb" id="mNone">No music</button></div>
+      <div class="now"><button type="button" class="tb" id="mPlay" aria-pressed="false">Play</button><span class="name" id="mName">No track. The light runs on its own.</span></div>
+      <div class="meter" aria-hidden="true"><span><i id="mv0"></i>level</span><span><i id="mv1"></i>low</span><span><i id="mv2"></i>mid</span><span><i id="mv3"></i>high</span></div>
+    </div>`;
+    c.sync = () => {
+      const has = !!opts().audio;
+      row.querySelector('#mPlay').disabled = !has;
+      row.querySelector('#mNone').hidden = !has;
+      row.querySelector('.meter').style.opacity = has ? 1 : 0.35;
+      row.querySelector('#mName').textContent = has ? audioLabel : 'No track. The light runs on its own.';
+    };
+  } else if (c.t === 'gradient'){
+    row.innerHTML = `<span class="lbl" id="l-${c.k}">${c.label}</span><button type="button" class="tog" id="${id}" aria-labelledby="l-${c.k}" aria-pressed="false"><span></span></button>`
+      + `<div class="gstops"><label for="${id}-a">Faint light<input type="color" id="${id}-a"></label><span class="gbar" aria-hidden="true"></span><label for="${id}-b">Bright light<input type="color" id="${id}-b"></label></div>`
+      + `<div class="hint">Maps brightness to colour: the veil takes the first colour, the brightest folds the second. Replaces the light colour while on.</div>`;
+    const tog = row.querySelector('.tog'), stops = row.querySelector('.gstops'), ia = row.querySelector(`#${id}-a`), ib = row.querySelector(`#${id}-b`), bar = row.querySelector('.gbar');
+    const parts = v => { const m = String(v || '').match(/(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^)]*\)|#[0-9a-f]{3,8}\b|[a-z]+/gi) || []; return m.length >= 2 ? [toHex(m[0]), toHex(m[1])] : null; };
+    c.sync = () => {
+      const g = parts(getV(c)); tog.setAttribute('aria-pressed', String(!!g)); stops.hidden = !g;
+      if (g){ ia.value = g[0]; ib.value = g[1]; bar.style.setProperty('--ga', g[0]); bar.style.setProperty('--gb', g[1]); }
+    };
+    tog.addEventListener('click', () => {
+      const g = parts(getV(c));
+      if (g){ c.last = g.join(' '); apply(c.k, ''); }
+      else apply(c.k, c.last || `${toHex(opts().color)} #ffffff`);
+      changed(true);
+    });
+    const upd = () => { apply(c.k, `${ia.value} ${ib.value}`); c.sync(); changed(false); };
+    ia.addEventListener('input', upd); ib.addEventListener('input', upd);
+  } else if (c.t === 'color'){
+    row.classList.add('color');
+    row.innerHTML = `<label for="${id}">${c.label}</label><span style="display:flex;gap:8px;align-items:center">${c.transparent ? `<button type="button" class="tb" id="${id}-clear" aria-pressed="false" title="Draw light only and blend it over whatever is behind">Transparent</button>` : ''}<input type="color" id="${id}"></span>`;
+    const inp = row.querySelector('input[type=color]'), tb = row.querySelector('.tb');
+    c.sync = () => {
+      const v = getV(c); const clear = String(v).toLowerCase() === 'transparent';
+      if (!clear) inp.value = toHex(v);
+      if (tb){ tb.setAttribute('aria-pressed', String(clear)); inp.style.opacity = clear ? 0.35 : 1; }
+    };
+    inp.addEventListener('input', () => { apply(c.k, inp.value); changed(false); if (tb) c.sync(); });
+    if (tb) tb.addEventListener('click', () => {
+      const clear = String(getV(c)).toLowerCase() === 'transparent';
+      apply(c.k, clear ? (c.last || baseOf(presetId).background) : 'transparent');
+      if (!clear) c.last = inp.value;
+      changed(true);
+    });
+  } else {
+    row.innerHTML = `<span class="lbl" id="l-${c.k}">${c.label}</span><button type="button" class="tog" id="${id}" aria-labelledby="l-${c.k}" aria-pressed="false"><span></span></button>`;
+    const b = row.querySelector('button');
+    b.addEventListener('click', () => {
+      if (c.local){ local[c.k] = !local[c.k]; }
+      else apply(c.k, !getV(c));
+      changed(true);
+    });
+    c.sync = () => b.setAttribute('aria-pressed', String(!!getV(c)));
+  }
+  c.row = row;
+  return row;
+}
+function toHex(v){
+  const s = String(v).trim();
+  if (/^#[0-9a-f]{6}$/i.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-f]{3}$/i.test(s)) return '#' + s.slice(1).split('').map(ch => ch + ch).join('').toLowerCase();
+  const cv = document.createElement('canvas').getContext('2d'); cv.fillStyle = s; const o = cv.fillStyle;
+  return /^#/.test(o) ? o : '#ffffff';
+}
+function buildControls(){
+  for (const sec in CONTROLS){ const host = $('rows-' + sec); host.innerHTML = ''; CONTROLS[sec].forEach(c => host.appendChild(makeControl(c))); }
+}
+function buildPresets(){
+  const host = $('presets');
+  IDS.forEach((id, i) => {
+    const p = PRE[id];
+    const b = document.createElement('button'); b.type = 'button';
+    const tag = `${p.surface} · ${p.mode === 'reflect' ? 'mirror' : 'glass'}${p.dispersion > 0.2 ? ' · spectral' : ''}`;
+    const gs = p.gradient ? p.gradient.split(' ') : null;
+    const sw = gs ? `background:linear-gradient(90deg,${gs[0]},${gs[1]});box-shadow:0 0 6px ${gs[1]};width:14px;border-radius:4px` : `background:${p.color};box-shadow:0 0 6px ${p.color}`;
+    b.innerHTML = `<span class="nm">${p.label}</span><span class="tg"><span class="sw" style="${sw}"></span>${tag}</span>`;
+    b.addEventListener('click', () => loadPreset(id));
+    host.appendChild(b);
+  });
+}
+let paused = false;
+function loadPreset(id, keep){
+  presetId = id;
+  if (!keep){ const keepAudio = {}; for (const k in over) if (/^audio/.test(k)) keepAudio[k] = over[k]; over = keepAudio; }
+  el.clearOptions();
+  el.setAttribute('preset', id);
+  el.setOptions(Object.assign({}, over, {paused}));
+  store.set('preset', id);
+  changed(true);
+}
+function changed(structural){
+  const o = opts();
+  ALL.forEach(c => { if (structural || c.t !== 'range') c.row.hidden = c.show ? !c.show(o) : false; c.sync(); });
+  [...$('presets').children].forEach((b, i) => b.setAttribute('aria-pressed', String(IDS[i] === presetId)));
+  $('sample').hidden = !local._sample;
+  const p = PRE[presetId];
+  $('pNo').textContent = `Preset ${IDS.indexOf(presetId) + 1} of ${IDS.length}`;
+  $('pName').textContent = p.label + (Object.keys(over).length ? ', edited' : '');
+  $('pNote').textContent = p.note;
+  $('pSpec').textContent = [o.surface, o.mode === 'reflect' ? 'mirror' : `n ${(+o.ior).toFixed(2)}`, `throw ${num(o.distance,2)}`, `relief ${num(o.relief,2)}`, o.dispersion > 0 ? `dispersion ${pct(o.dispersion)}` : null].filter(Boolean).join(' · ');
+  const col = o.gradient ? toHex(o.gradient.split(' ').slice(-1)[0]) : toHex(o.color);
+  document.documentElement.style.setProperty('--beam', mixWhite(col, 0.25));
+  renderCode();
+  const saved = Object.assign({}, over); for (const k in saved) if (/^audio/.test(k)) delete saved[k];
+  store.set('over', saved);
+}
+function mixWhite(hex, t){
+  const n = parseInt(hex.slice(1), 16); const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+  const m = Math.max(r, g, b) || 1; const k = 255/m;
+  const f = v => Math.round((v*k)*(1-t) + 255*t);
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function attrList(){
+  const out = [['preset', presetId]];
+  for (const k of Object.keys(DEF)){
+    if (!(k in over)) continue;
+    if (k === 'paused') continue;
+    const v = over[k];
+    const a = ATTR[k] || k;
+    if (k === 'audio'){ if (v) out.push([a, audioEmbed || String(v)]); continue; }
+    if (typeof v === 'boolean'){ if (v) out.push([a, null]); else out.push([a, 'false']); }
+    else out.push([a, typeof v === 'number' ? num(v, 4) : (v === '' ? 'none' : String(v))]);
+  }
+  return out;
+}
+function tagText(){
+  const al = attrList();
+  const parts = al.map(([a, v]) => v === null ? a : `${a}="${v}"`);
+  const oneLine = parts.join(' ');
+  const attrs = oneLine.length > 60 ? '\n  ' + parts.join('\n  ') + '\n ' : ' ' + oneLine;
+  return `<script src="https://cdn.jsdelivr.net/npm/caustic-light@1/dist/caustic-light.min.js"><\/script>\n<caustic-light${attrs} style="position:absolute; inset:0"></caustic-light>`;
+}
+function renderCode(){
+  const al = attrList();
+  const parts = al.map(([a, v]) => v === null ? `<span class="a">${esc(a)}</span>` : `<span class="a">${esc(a)}</span>=<span class="t">"${esc(v)}"</span>`);
+  const flat = al.map(([a, v]) => v === null ? a : `${a}="${v}"`).join(' ');
+  const attrs = flat.length > 60 ? '\n  ' + parts.join('\n  ') + '\n ' : ' ' + parts.join(' ');
+  $('code').innerHTML = `${esc('<script src="https://cdn.jsdelivr.net/npm/caustic-light@1/dist/caustic-light.min.js"><\/script>')}\n${esc('<caustic-light')}${attrs} <span class="a">style</span>=<span class="t">"position:absolute; inset:0"</span>${esc('></caustic-light>')}`;
+}
+let toastT = 0;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 1600); }
+function copy(text, okMsg){
+  const done = () => toast(okMsg);
+  const fallback = () => {
+    const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    toast(ok ? okMsg : 'Copy was blocked. Select the text and copy it by hand.');
+  };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch(e){ fallback(); }
+}
+$('btnCopyTag').addEventListener('click', () => copy(tagText(), 'Tag copied'));
+let srcText = $('caustic-light-src').textContent.trim().replace(/<\\\/script/g, '<\/script');
+if (!srcText && $('caustic-light-src').src) fetch($('caustic-light-src').src).then(r => r.text()).then(t => { srcText = t; }).catch(() => {});
+$('btnCopySrc').addEventListener('click', () => srcText ? copy(srcText, 'caustic-light.js copied') : toast('The source is still loading. Try again in a moment.'));
+
+/* bar */
+const btnPause = $('btnPause');
+function setPaused(v){ paused = v; el.setOptions({paused: v}); btnPause.textContent = v ? 'Play' : 'Pause'; btnPause.setAttribute('aria-pressed', String(v)); }
+btnPause.addEventListener('click', () => setPaused(!paused));
+$('btnSeed').addEventListener('click', () => { apply('seed', Math.floor(Math.random()*997) + 1); changed(false); });
+$('btnReset').addEventListener('click', () => loadPreset(presetId));
+const panel = $('panel'), show = $('show');
+function setPanel(on){ panel.hidden = !on; show.hidden = on; document.body.classList.toggle('panel-off', !on); store.set('panel', on); }
+$('btnHide').addEventListener('click', () => setPanel(false));
+show.addEventListener('click', () => setPanel(true));
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,button,textarea,select,summary,pre')) return;
+  if (e.code === 'Space'){ e.preventDefault(); setPaused(!paused); }
+  else if (e.key === 'h' || e.key === 'H') setPanel(panel.hidden);
+});
+
+/* music */
+const DEMO_SRC = 'assets/ambient-loop.mp3', DEMO_EMBED = 'ambient-loop.mp3';
+let audioLabel = '', audioEmbed = '', objURL = null;
+function setTrack(src, label, embed, crossfade){
+  if (objURL && objURL !== src){ URL.revokeObjectURL(objURL); objURL = null; }
+  audioLabel = label; audioEmbed = embed;
+  const o = {audio: src};
+  if (crossfade != null) o.audioCrossfade = crossfade;
+  for (const k in o) apply(k, o[k]);
+  changed(true);
+  el.playAudio();
+}
+function wireMusic(){
+$('mDemo').addEventListener('click', () => setTrack(DEMO_SRC, 'Demo: ambient loop, 2 min 38 s', DEMO_EMBED, 0.5));
+$('mFile').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  objURL = URL.createObjectURL(f);
+  setTrack(objURL, f.name, 'music/' + f.name, 4);
+  e.target.value = '';
+});
+$('mNone').addEventListener('click', () => { el.pauseAudio(); ['audio', 'audioCrossfade'].forEach(k => { delete over[k]; }); el.setOptions({audio: ''}); audioLabel = ''; changed(true); });
+$('mPlay').addEventListener('click', () => el.toggleAudio());
+}
+const syncPlay = () => { const on = el.audioPlaying; $('mPlay').textContent = on ? 'Pause' : 'Play'; $('mPlay').setAttribute('aria-pressed', String(on)); };
+el.addEventListener('audio-play', syncPlay); el.addEventListener('audio-pause', syncPlay);
+el.addEventListener('caustic-error', e => { if (opts().audio) $('mName').textContent = `Couldn't play that file: ${e.detail && e.detail.message || e.detail}`; });
+setInterval(() => {
+  const L = el.audioLevels, v = [L.energy, L.low, L.mid, L.high];
+  v.forEach((x, i) => { $('mv' + i).style.height = `${Math.round(clamp01((x - 0.5) / 2) * 96) + 4}%`; });
+}, 100);
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+/* stats */
+setInterval(() => {
+  const s = el.stats, o = opts();
+  $('stRays').innerHTML = s.rays ? `<b>${s.rays.toLocaleString()}</b> rays · <b>${s.fps}</b> fps` : 'Starting…';
+  const still = o.paused || +o.speed === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('stState').textContent = `${still ? 'Still, refined' : 'Live'} · ${s.quality || o.quality}`;
+}, 600);
+
+/* boot */
+buildPresets();
+buildControls();
+wireMusic();
+const hashId = (location.hash || '').slice(1);
+const saved = store.get('preset', 'silk');
+const start = PRE[hashId] ? hashId : (PRE[saved] ? saved : 'silk');
+if (start === saved && !PRE[hashId]) { const so = store.get('over', {}); if (so && typeof so === 'object') over = so; }
+loadPreset(start, true);
+setPaused(false);
+const small = matchMedia('(max-width: 720px)').matches;
+setPanel(small ? false : store.get('panel', true));
+el.addEventListener('caustic-error', () => {
+  $('stState').textContent = 'WebGL 2 unavailable';
+  $('pNote').textContent = 'This browser could not start WebGL 2, so the light cannot be drawn here. Try a recent desktop browser with hardware acceleration on.';
+});
+})();
+</script>
+
+</body>
+</html>

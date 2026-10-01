@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caustic-light · music-reactive light</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #16110d; color: #f3e6d4; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  caustic-light { position: fixed; inset: 0; }
+  a.back { position: fixed; top: 16px; left: 16px; color: inherit; opacity: .75; font-size: 14px; }
+  .panel { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(560px, calc(100vw - 32px));
+           background: rgba(22, 17, 13, .66); backdrop-filter: blur(12px); border: 1px solid rgba(243, 230, 212, .16); border-radius: 10px; padding: 16px; }
+  .panel p { margin: 0 0 12px; opacity: .85; }
+  .row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .row label { flex: 1; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .row input { flex: 1; }
+  button { appearance: none; border: 1px solid rgba(243, 230, 212, .5); background: #f3e6d4; color: #16110d; padding: 9px 16px; border-radius: 999px; font: 600 13px/1 system-ui, sans-serif; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid #f3e6d4; outline-offset: 2px; }
+  .meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; height: 42px; align-items: end; margin-top: 14px; }
+  .meters span { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 4px; font: 11px ui-monospace, Menlo, monospace; text-align: center; opacity: .8; }
+  .meters i { display: block; height: 4%; background: #ffd7a3; border-radius: 2px; transition: height .1s linear; }
+  small { display: block; margin-top: 12px; opacity: .6; }
+</style>
+</head>
+<body>
+<!--
+  audio            the track; it loops forever, crossfading its end into its start
+  audio-crossfade  0.5 s, because this file is already a seamless loop (use ~4 s for a normal track)
+  audio-react      how much the music moves the light (0 = off, 2 = strong)
+  audio-controls   adds a small play / pause button in the corner of the light
+-->
+<caustic-light id="light" preset="blown-glass"
+  audio="assets/ambient-loop.mp3" audio-crossfade="0.5" audio-react="0.8" audio-controls></caustic-light>
+
+<a class="back" href="index.html">← Examples</a>
+
+<div class="panel">
+  <p>Swells in the music brighten the light and speed up its flow, low notes deepen the relief, highs lift the glow. Browsers only allow sound after a click, so press play.</p>
+  <div class="row">
+    <button type="button" id="play">Play music</button>
+    <label>Reaction <input id="react" type="range" min="0" max="2" step="0.05" value="0.8"></label>
+  </div>
+  <div class="row"><label>Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.6"></label></div>
+  <div class="meters" aria-hidden="true">
+    <span><i id="m0"></i>level</span><span><i id="m1"></i>low</span><span><i id="m2"></i>mid</span><span><i id="m3"></i>high</span>
+  </div>
+  <small>Music: assets/ambient-loop.mp3. See assets/AUDIO-LICENSE.md; the track is not covered by the code's MIT license.</small>
+</div>
+
+<script src="../src/caustic-light.js"></script>
+<script>
+  const light = document.getElementById('light');
+  const play = document.getElementById('play');
+
+  play.addEventListener('click', () => light.toggleAudio());
+  light.addEventListener('audio-play', () => { play.textContent = 'Pause music'; });
+  light.addEventListener('audio-pause', () => { play.textContent = 'Play music'; });
+  light.addEventListener('caustic-error', e => { play.textContent = 'Could not play'; console.warn(e.detail); });
+
+  document.getElementById('react').addEventListener('input', e => light.setOptions({ audioReact: +e.target.value }));
+  document.getElementById('volume').addEventListener('input', e => light.setOptions({ audioVolume: +e.target.value }));
+
+  // audioLevels are relative to the track's own running average: 1 = average, 2 = twice as loud.
+  setInterval(() => {
+    const L = light.audioLevels, values = [L.energy, L.low, L.mid, L.high];
+    values.forEach((v, i) => {
+      document.getElementById('m' + i).style.height = `${Math.round(Math.max(0, Math.min(1, (v - 0.5) / 2)) * 96) + 4}%`;
+    });
+  }, 100);
+</script>
+</body>
+</html>

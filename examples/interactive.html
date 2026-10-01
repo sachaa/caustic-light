@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caustic-light · hover effects</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #0f4656; color: #fff; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  caustic-light { position: fixed; inset: 0; }
+  a.back { position: fixed; top: 16px; left: 16px; color: #fff; opacity: .75; font-size: 14px; }
+  .panel { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(640px, calc(100vw - 32px));
+           background: rgba(4, 20, 26, .62); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, .16); border-radius: 10px; padding: 14px 16px; }
+  .panel p { margin: 0 0 10px; opacity: .85; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  button { appearance: none; border: 1px solid rgba(255, 255, 255, .35); background: transparent; color: #fff; padding: 7px 11px; border-radius: 999px; font: 500 13px/1 system-ui, sans-serif; cursor: pointer; }
+  button[aria-pressed="true"] { background: #fff; color: #0f4656; border-color: #fff; }
+  button:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  label { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  label input { flex: 1; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .row label { flex: 1 1 200px; }
+  code { font: 12.5px ui-monospace, "SF Mono", Menlo, monospace; opacity: .9; }
+</style>
+</head>
+<body>
+<caustic-light id="light" preset="pool" hover="ripple"></caustic-light>
+<a class="back" href="index.html">← Examples</a>
+
+<div class="panel">
+  <p>Move the pointer over the water. Click to drop a bigger ripple. Effects combine freely.</p>
+  <div class="chips" id="chips" role="group" aria-label="Hover effects"></div>
+  <div class="row">
+    <label>Strength <input id="strength" type="range" min="0" max="3" step="0.05" value="1"></label>
+    <label>Radius <input id="radius" type="range" min="0.05" max="1.5" step="0.01" value="0.35"></label>
+    <button type="button" id="rain">Rain from code</button>
+  </div>
+  <p style="margin:10px 0 0"><code id="tag"></code></p>
+</div>
+
+<script src="../src/caustic-light.js"></script>
+<script>
+  const light = document.getElementById('light');
+  const effects = ['ripple', 'lens', 'calm', 'swirl', 'focus', 'tilt', 'glow'];
+  const chips = document.getElementById('chips');
+  const on = new Set(['ripple']);
+
+  for (const fx of effects) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = fx; b.dataset.fx = fx;
+    b.addEventListener('click', () => { on.has(fx) ? on.delete(fx) : on.add(fx); update(); });
+    chips.appendChild(b);
+  }
+  const strength = document.getElementById('strength'), radius = document.getElementById('radius');
+  strength.addEventListener('input', update);
+  radius.addEventListener('input', update);
+
+  function update() {
+    const hover = effects.filter(f => on.has(f)).join(' ');
+    light.setOptions({ hover, hoverStrength: +strength.value, hoverRadius: +radius.value });
+    for (const b of chips.children) b.setAttribute('aria-pressed', String(on.has(b.dataset.fx)));
+    document.getElementById('tag').textContent =
+      `<caustic-light preset="pool" hover="${hover || 'none'}" hover-strength="${strength.value}" hover-radius="${radius.value}">`;
+  }
+  update();
+
+  // el.ripple(x, y, amount) drops a ripple from code; x and y run from -1 to 1 (y up).
+  let rainTimer = null;
+  document.getElementById('rain').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    if (rainTimer) { clearInterval(rainTimer); rainTimer = null; btn.textContent = 'Rain from code'; return; }
+    btn.textContent = 'Stop the rain';
+    rainTimer = setInterval(() => light.ripple(Math.random() * 2 - 1, Math.random() * 2 - 1, 0.4 + Math.random() * 0.8), 350);
+  });
+</script>
+</body>
+</html>

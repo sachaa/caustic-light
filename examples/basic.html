@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caustic-light · presets as a background</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #111; color: #fff; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+
+  /* The light fills the page behind everything else. */
+  caustic-light { position: fixed; inset: 0; }
+
+  .hero { position: relative; height: 100%; display: grid; place-content: center; text-align: center; padding: 0 20px; }
+  .hero h1 { margin: 0; font: 600 clamp(36px, 7vw, 84px)/1 Georgia, serif; letter-spacing: -.02em; text-shadow: 0 2px 24px rgba(0, 0, 0, .35); }
+  .hero p { margin: 14px 0 0; opacity: .85; }
+
+  nav { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: calc(100vw - 32px); }
+  nav button { appearance: none; border: 1px solid rgba(255, 255, 255, .35); background: rgba(0, 0, 0, .35); color: #fff; padding: 8px 12px; border-radius: 999px; font: 500 13px/1 system-ui, sans-serif; cursor: pointer; backdrop-filter: blur(8px); }
+  nav button[aria-pressed="true"] { background: #fff; color: #111; }
+  nav button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  a.back { position: fixed; top: 16px; left: 16px; color: #fff; opacity: .7; font-size: 14px; }
+</style>
+</head>
+<body>
+<caustic-light id="light" preset="silk"></caustic-light>
+
+<a class="back" href="index.html">← Examples</a>
+<div class="hero">
+  <h1 id="title">Silk ribbons</h1>
+  <p id="note"></p>
+</div>
+<nav id="presets" aria-label="Presets"></nav>
+
+<script src="../src/caustic-light.js"></script>
+<script>
+  const light = document.getElementById('light');
+  const nav = document.getElementById('presets');
+
+  // CausticLight.presets lists every built-in look with a label and a note.
+  for (const [id, preset] of Object.entries(CausticLight.presets)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = preset.label;
+    button.addEventListener('click', () => select(id));
+    button.dataset.id = id;
+    nav.appendChild(button);
+  }
+
+  function select(id) {
+    light.preset = id;                       // same as light.setAttribute('preset', id)
+    const preset = CausticLight.presets[id];
+    document.getElementById('title').textContent = preset.label;
+    document.getElementById('note').textContent = preset.note;
+    for (const b of nav.children) b.setAttribute('aria-pressed', String(b.dataset.id === id));
+  }
+  select('silk');
+</script>
+</body>
+</html>

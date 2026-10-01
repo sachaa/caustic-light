@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caustic-light · light on content</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #151311; color: #efe8dc; font: 17px/1.6 Georgia, "Times New Roman", serif; }
+  a.back { position: fixed; top: 16px; left: 16px; z-index: 2; color: #efe8dc; opacity: .7; font: 14px system-ui, sans-serif; }
+
+  /* An ordinary page section… */
+  .feature { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 80px 24px; overflow: hidden;
+             background: radial-gradient(120% 90% at 20% 10%, #5b4636 0%, #2b2420 45%, #151311 100%); }
+  .feature article { position: relative; max-width: 38rem; }
+  .feature .kicker { font: 600 12px/1 system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; opacity: .75; margin: 0 0 18px; }
+  .feature h1 { margin: 0 0 20px; font-size: clamp(40px, 6vw, 72px); line-height: 1.02; font-weight: 500; letter-spacing: -.015em; }
+
+  /* …with light falling across it. background="transparent" draws light only and
+     blends it with mix-blend-mode: screen, so the text and colours below show through.
+     pointer-events: none keeps the page clickable; hover effects still work. */
+  .feature caustic-light { position: absolute; inset: 0; pointer-events: none; }
+
+  .card-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; max-width: 960px; margin: 0 auto; padding: 64px 24px 96px; }
+  .card { position: relative; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; display: flex; align-items: flex-end; padding: 18px; }
+  .card h2 { position: relative; margin: 0; font-size: 22px; font-weight: 500; }
+  .card caustic-light { position: absolute; inset: 0; pointer-events: none; }
+  .c1 { background: linear-gradient(160deg, #24496b, #0c1c2b); }
+  .c2 { background: linear-gradient(160deg, #6b4a24, #2b1a0c); }
+  .c3 { background: linear-gradient(160deg, #3d2a5a, #140c22); }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Examples</a>
+
+<section class="feature">
+  <article>
+    <p class="kicker">Northlight Glass Studio</p>
+    <h1>Light, bent into lines.</h1>
+    <p>Hand-blown vessels shown in the light they throw. The caustics on this page are drawn over the content with a two-colour gradient map: faint light picks up a warm rose, the brightest folds turn to cream.</p>
+  </article>
+  <caustic-light preset="silk" background="transparent" gradient="#b04a8a #fff2cc"
+                 intensity="0.3" contrast="2.4" hover="calm glow"></caustic-light>
+</section>
+
+<div class="card-row">
+  <div class="card c1"><caustic-light preset="pool" background="transparent" intensity="0.22" speed="0.4"></caustic-light><h2>Water</h2></div>
+  <div class="card c2"><caustic-light preset="blown-glass" background="transparent" beam-y="-0.9"></caustic-light><h2>Amber glass</h2></div>
+  <div class="card c3"><caustic-light preset="prism" background="transparent" intensity="0.55" beam-x="0"></caustic-light><h2>Prism</h2></div>
+</div>
+
+<script src="../src/caustic-light.js"></script>
+</body>
+</html>
