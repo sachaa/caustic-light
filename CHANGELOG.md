@@ -12,6 +12,9 @@ All notable changes to this project are documented here. The format follows
   and `glow` hover effects. Add `hover="none"` to keep it still.
 - The playground starts with its controls hidden and links to the GitHub
   repository, with its star count.
+- The playground's Share button copies a link that reopens the exact look,
+  with every setting in the query string and without the label card. On
+  phones the corner buttons become icons.
 
 ### Removed
 
