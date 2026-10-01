@@ -1,5 +1,5 @@
 /*!
- * caustic-light.js · <caustic-light> web component · v1.0.0
+ * caustic-light.js · <caustic-light> web component · v1.1.0
  * https://www.npmjs.com/package/caustic-light · MIT License · (c) 2026 Sacha
  *
  * Physically based caustic light: the bright webs, ribbons and cusps that curved
@@ -14,7 +14,7 @@
  *
  * Usage
  *   <script src="caustic-light.js"></script>
- *   <caustic-light preset="silk" style="position:absolute; inset:0"></caustic-light>
+ *   <caustic-light preset="pool" style="position:absolute; inset:0"></caustic-light>
  *
  *   The element is display:block and has no intrinsic height: size it like any
  *   block (height, aspect-ratio, or position:absolute with inset). For an overlay
@@ -22,7 +22,7 @@
  *   and blends with `mix-blend-mode: screen`.
  *
  * Attributes (all optional; the preset supplies the rest)
- *   preset        silk | laser | blown-glass | pool | prism | hammered
+ *   preset        laser | blown-glass | pool | prism | hammered
  *   surface       flow | ripple | hammered | lens     shape of the bumpy optic
  *   mode          reflect | refract                   mirror, or glass / water
  *   distance      0–6      throw from optic to wall; longer = sharper, more folded
@@ -54,7 +54,8 @@
  *   grain         0–0.2    film grain
  *   quality       auto | low | medium | high
  *   hover         none, or any of: ripple lens calm swirl focus tilt glow
- *                          (space separated, combinable). Off by default.
+ *                          (space separated, combinable). Off by default;
+ *                          the prism preset turns on all but ripple.
  *                  ripple  rings spread from the pointer as it moves; a click drops a bigger one
  *                  lens    a soft lens follows the pointer and gathers light into a ring
  *                  calm    the optic goes still under the pointer; the light relaxes
@@ -108,12 +109,6 @@
   };
   const HOVER_FX = ['ripple', 'lens', 'calm', 'swirl', 'focus', 'tilt', 'glow'];
   const PRESETS = {
-    silk: {
-      label: 'Silk ribbons', note: 'Polished steel with slow dents, reflected onto a gallery wall',
-      surface: 'flow', mode: 'reflect', distance: 3.2, relief: 0.18, scale: 0.8, detail: 5, roughness: 0.32, warp: 0.5,
-      speed: 0.2, seed: 3, color: '#fff3df', background: '#46413b', intensity: 0.3, contrast: 2.2, dispersion: 0,
-      beam: 0, beamX: 0, beamY: 0, spread: 0, softness: 1.0, glow: 0.5, trail: 0.45, grain: 0.035
-    },
     laser: {
       label: 'Laser web', note: 'A 488 nm beam through a hammered glass sphere, spread across a wall',
       surface: 'hammered', mode: 'refract', ior: 1.5, distance: 2.6, relief: 0.5, scale: 6, detail: 2, roughness: 0.45, warp: 0.5,
@@ -136,13 +131,23 @@
       label: 'Prism lens', note: 'A thick glass bowl focusing sunlight, split into colour at the folds',
       surface: 'lens', mode: 'refract', ior: 1.52, distance: 4.0, relief: 1.2, scale: 1.2, detail: 2, roughness: 0.5, warp: 0.3,
       speed: 0.06, seed: 5, color: '#ffffff', background: '#2c2c2e', intensity: 0.8, contrast: 1.4, dispersion: 0.55,
-      beam: 0.8, beamX: -0.3, beamY: 0, spread: 0.3, softness: 0.8, glow: 0.6, trail: 0.4, grain: 0.03
+      beam: 0.8, beamX: -0.3, beamY: 0, spread: 0.3, softness: 0.8, glow: 0.6, trail: 0.4, grain: 0.03,
+      hover: 'lens calm swirl focus tilt glow'
     },
     hammered: {
       label: 'Hammered glass', note: 'Thick dimpled glass throwing a net onto a blue table',
       surface: 'hammered', mode: 'refract', ior: 1.5, distance: 1.1, relief: 0.55, scale: 1.8, detail: 2, roughness: 0.4, warp: 0.9,
       speed: 0.1, seed: 4, color: '#e2f1ff', gradient: '#4f86ff #f4f9ff', gradientMid: 0.5, background: '#163f86', intensity: 0.3, contrast: 2.3, dispersion: 0.12,
       beam: 0, beamX: 0, beamY: 0, spread: 0, softness: 0.8, glow: 0.5, trail: 0.35, grain: 0.035
+    }
+  };
+  // Retired presets: left out of the list, but still honoured so pages that already
+  // use them keep their look.
+  const RETIRED = {
+    silk: {
+      surface: 'flow', mode: 'reflect', distance: 3.2, relief: 0.18, scale: 0.8, detail: 5, roughness: 0.32, warp: 0.5,
+      speed: 0.2, seed: 3, color: '#fff3df', background: '#46413b', intensity: 0.3, contrast: 2.2, dispersion: 0,
+      beam: 0, beamX: 0, beamY: 0, spread: 0, softness: 1.0, glow: 0.5, trail: 0.45, grain: 0.035
     }
   };
   // attribute name -> [option key, type, min, max, values]
@@ -1005,7 +1010,8 @@ void main(){
     }
     _bgCss() { const b = parseColor(this._o ? this._o.background : DEFAULTS.background); return Array.isArray(b) ? `rgb(${b.map(v => Math.round(v * 255)).join(',')})` : 'transparent'; }
     _compute() {
-      const pr = PRESETS[(this.getAttribute('preset') || '').toLowerCase()] || null;
+      const name = (this.getAttribute('preset') || '').toLowerCase();
+      const pr = PRESETS[name] || RETIRED[name] || null;
       const o = Object.assign({}, DEFAULTS);
       if (pr) for (const k in pr) if (k in DEFAULTS) o[k] = pr[k];
       Object.assign(o, this._attr, this._js);
@@ -1181,7 +1187,7 @@ void main(){
   CausticLight.presets = PRESETS;
   CausticLight.defaults = DEFAULTS;
   CausticLight.attributes = Object.assign({}, KEY2ATTR);
-  CausticLight.version = '1.0.0';
+  CausticLight.version = '1.1.0';
   customElements.define('caustic-light', CausticLight);
   window.CausticLight = CausticLight;
 })();

@@ -24,11 +24,11 @@
 </style>
 </head>
 <body>
-<caustic-light id="light" preset="silk"></caustic-light>
+<caustic-light id="light" preset="laser"></caustic-light>
 
 <a class="back" href="index.html">← Examples</a>
 <div class="hero">
-  <h1 id="title">Silk ribbons</h1>
+  <h1 id="title">Laser web</h1>
   <p id="note"></p>
 </div>
 <nav id="presets" aria-label="Presets"></nav>
@@ -55,7 +55,7 @@
     document.getElementById('note').textContent = preset.note;
     for (const b of nav.children) b.setAttribute('aria-pressed', String(b.dataset.id === id));
   }
-  select('silk');
+  select('laser');
 </script>
 </body>
 </html>

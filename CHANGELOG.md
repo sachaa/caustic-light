@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-01
+
+### Changed
+
+- The `prism` preset now turns on the `lens`, `calm`, `swirl`, `focus`, `tilt`
+  and `glow` hover effects. Add `hover="none"` to keep it still.
+- The playground starts with its controls hidden and links to the GitHub
+  repository, with its star count.
+
+### Removed
+
+- The `silk` preset is no longer listed in `CausticLight.presets`, the docs or
+  the playground. `preset="silk"` still renders as before, so existing pages
+  keep their look.
+
 ## [1.0.0] - 2026-10-01
 
 First public release.

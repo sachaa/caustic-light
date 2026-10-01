@@ -14,5 +14,5 @@ To use your own music, point the `audio` attribute at any MP3, M4A or OGG file
 on your site:
 
 ```html
-<caustic-light preset="silk" audio="/music/your-track.mp3" audio-controls></caustic-light>
+<caustic-light preset="blown-glass" audio="/music/your-track.mp3" audio-controls></caustic-light>
 ```

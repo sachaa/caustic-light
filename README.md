@@ -4,13 +4,13 @@ Physically based caustic light for any web page: the bright webs, ribbons and
 cusps that curved glass, water and polished metal throw onto a wall. One
 dependency-free web component, rendered with WebGL2.
 
-![The six built-in presets](docs/presets.jpg)
+![The five built-in presets](docs/presets.jpg)
 
 - **Real caustics, not a texture.** A grid of light rays is bent by an animated
   surface and drawn where it lands, so folds and cusps come out as crisp, moving
   lines.
-- **Six presets** (silk ribbons, laser web, blown glass, pool floor, prism lens,
-  hammered glass) and every parameter exposed as an HTML attribute.
+- **Five presets** (laser web, blown glass, pool floor, prism lens, hammered
+  glass) and every parameter exposed as an HTML attribute.
 - **Fits into any page:** a solid wall colour, or `background="transparent"` to
   lay the light over existing content.
 - **Gradient maps, spectral dispersion, round or diverging beams, glow and film
@@ -62,7 +62,7 @@ effects still work.
 ```html
 <div class="card" style="position: relative">
   <img src="poster.jpg" alt="">
-  <caustic-light preset="silk" background="transparent" gradient="#b04a8a #fff2cc"
+  <caustic-light preset="hammered" background="transparent" gradient="#b04a8a #fff2cc"
                  style="position: absolute; inset: 0; pointer-events: none"></caustic-light>
 </div>
 ```
@@ -71,11 +71,10 @@ effects still work.
 
 | `preset` | Look | Optic |
 |---|---|---|
-| `silk` | Polished steel with slow dents, reflected onto a gallery wall | flow · mirror |
 | `laser` | A 488 nm beam through a hammered glass sphere, spread across a wall | hammered · glass |
 | `blown-glass` | A warm lamp shining up through an uneven glass shell | flow · glass · gradient |
 | `pool` | Sunlight through rippling water onto the floor of a pool | ripple · water |
-| `prism` | A thick glass bowl focusing sunlight, split into colour at the folds | lens · glass · dispersion |
+| `prism` | A thick glass bowl focusing sunlight, split into colour at the folds | lens · glass · dispersion · hover |
 | `hammered` | Thick dimpled glass throwing a net onto a blue table | hammered · glass · gradient |
 
 A preset fills in every option. Any attribute you add overrides it:
@@ -135,7 +134,8 @@ becomes `beamX`).
 
 ### Hover effects
 
-Off by default. Combine any of them in a space-separated list:
+Off by default, except in the `prism` preset, which turns on all but `ripple`
+(`hover="none"` turns them off). Combine any of them in a space-separated list:
 `hover="ripple swirl"`.
 
 | Effect | What happens under the pointer |

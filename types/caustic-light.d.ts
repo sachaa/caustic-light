@@ -1,9 +1,9 @@
-// Type definitions for caustic-light 1.0
+// Type definitions for caustic-light 1.1
 // Project: https://www.npmjs.com/package/caustic-light
 // License: MIT
 
 /** Built-in looks. */
-export type CausticPreset = 'silk' | 'laser' | 'blown-glass' | 'pool' | 'prism' | 'hammered';
+export type CausticPreset = 'laser' | 'blown-glass' | 'pool' | 'prism' | 'hammered';
 
 /** Shape of the bumpy optic the light passes through. */
 export type CausticSurface = 'flow' | 'ripple' | 'hammered' | 'lens';

@@ -1,6 +1,6 @@
 {
   "name": "caustic-light",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A web component that renders physically based caustic light (the webs and ribbons that glass, water and polished metal throw onto a wall) with WebGL2. Gradient maps, hover effects and music-reactive light. No dependencies.",
   "keywords": [
     "caustics",
