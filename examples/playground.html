@@ -143,7 +143,7 @@ body.panel-off .sample{right:0}
 <body>
 
 
-<caustic-light id="stage" preset="silk" style="position:fixed;inset:0"></caustic-light>
+<caustic-light id="stage" preset="laser" style="position:fixed;inset:0"></caustic-light>
 
 <div class="sample" id="sample" hidden aria-hidden="true">
   <p class="eyebrow">Northlight Glass Studio</p>
@@ -153,8 +153,8 @@ body.panel-off .sample{right:0}
 </div>
 
 <div class="placard">
-  <div class="kicker"><span>caustic-light</span><span id="pNo">Preset 1 of 6</span></div>
-  <h1 id="pName">Silk ribbons</h1>
+  <div class="kicker"><span>caustic-light</span><span id="pNo">Preset 1 of 9</span></div>
+  <h1 id="pName">Neon tide</h1>
   <div class="note" id="pNote"></div>
   <div class="spec" id="pSpec"></div>
 </div>
@@ -199,7 +199,18 @@ const el = document.getElementById('stage');
 const CL = window.CausticLight;
 if (!CL) return;
 const PRE = CL.presets, DEF = CL.defaults, ATTR = CL.attributes;
-const IDS = Object.keys(PRE);
+/* Featured looks: a built-in preset plus a few changes, listed ahead of the presets. */
+const LOOKS = {
+  tide: {label: 'Neon tide', note: 'A cyan-to-gold beam through rippling water onto a midnight wall', preset: 'laser',
+    set: {surface: 'ripple', seed: 182, background: '#01061e', beam: 0.19, beamX: -0.16, spread: 0, gradient: '#2ee7ff #fff700', hover: 'lens calm swirl focus tilt glow'}},
+  ember: {label: 'Ember glass', note: 'Red light through rippled glass, split into colour at the folds', preset: 'blown-glass',
+    set: {surface: 'ripple', seed: 294, color: '#d60000', background: '#140000', dispersion: 0.27, beam: 0.2, softness: 0.3, quality: 'high', hover: 'ripple lens calm swirl focus tilt glow', hoverStrength: 2.24}},
+  signal: {label: 'Red signal', note: 'A narrow red beam through rippled glass, thrown off-centre', preset: 'laser',
+    set: {surface: 'ripple', seed: 294, color: '#d60000', background: '#140000', dispersion: 0.27, beam: 0.2, beamX: -0.18, beamY: 0.07, softness: 0.3, quality: 'high', hover: 'lens'}},
+};
+const ENTRIES = Object.assign({}, LOOKS);
+for (const id in PRE) ENTRIES[id] = {label: PRE[id].label, note: PRE[id].note, preset: id, set: {}};
+const IDS = Object.keys(ENTRIES), FIRST = IDS[0];
 const $ = id => document.getElementById(id);
 
 const store = {
@@ -207,10 +218,10 @@ const store = {
   set(k, v){ try { localStorage.setItem('caustic-light.' + k, JSON.stringify(v)); } catch(e){} }
 };
 
-let presetId = 'silk';
+let presetId = FIRST;
 let over = {};
 const opts = () => el.options;
-const baseOf = id => Object.assign({}, DEF, PRE[id] || {});
+const baseOf = id => { const e = ENTRIES[id]; return Object.assign({}, DEF, e ? PRE[e.preset] : {}, e ? e.set : {}); };
 
 const num = (v, d) => (+v).toFixed(d).replace(/\.?0+$/, '') || '0';
 const pct = v => `${Math.round(v*100)}%`;
@@ -398,12 +409,12 @@ function buildControls(){
 function buildPresets(){
   const host = $('presets');
   IDS.forEach((id, i) => {
-    const p = PRE[id];
+    const p = baseOf(id);
     const b = document.createElement('button'); b.type = 'button';
     const tag = `${p.surface} · ${p.mode === 'reflect' ? 'mirror' : 'glass'}${p.dispersion > 0.2 ? ' · spectral' : ''}`;
     const gs = p.gradient ? p.gradient.split(' ') : null;
     const sw = gs ? `background:linear-gradient(90deg,${gs[0]},${gs[1]});box-shadow:0 0 6px ${gs[1]};width:14px;border-radius:4px` : `background:${p.color};box-shadow:0 0 6px ${p.color}`;
-    b.innerHTML = `<span class="nm">${p.label}</span><span class="tg"><span class="sw" style="${sw}"></span>${tag}</span>`;
+    b.innerHTML = `<span class="nm">${ENTRIES[id].label}</span><span class="tg"><span class="sw" style="${sw}"></span>${tag}</span>`;
     b.addEventListener('click', () => loadPreset(id));
     host.appendChild(b);
   });
@@ -413,9 +424,9 @@ function loadPreset(id, keep){
   presetId = id;
   if (!keep){ const keepAudio = {}; for (const k in over) if (/^audio/.test(k)) keepAudio[k] = over[k]; over = keepAudio; }
   el.clearOptions();
-  el.setAttribute('preset', id);
-  el.setOptions(Object.assign({}, over, {paused}));
-  store.set('preset', id);
+  el.setAttribute('preset', ENTRIES[id].preset);
+  el.setOptions(Object.assign({}, ENTRIES[id].set, over, {paused}));
+  store.set('entry', id);
   changed(true);
 }
 function changed(structural){
@@ -423,7 +434,7 @@ function changed(structural){
   ALL.forEach(c => { if (structural || c.t !== 'range') c.row.hidden = c.show ? !c.show(o) : false; c.sync(); });
   [...$('presets').children].forEach((b, i) => b.setAttribute('aria-pressed', String(IDS[i] === presetId)));
   $('sample').hidden = !local._sample;
-  const p = PRE[presetId];
+  const p = ENTRIES[presetId];
   $('pNo').textContent = `Preset ${IDS.indexOf(presetId) + 1} of ${IDS.length}`;
   $('pName').textContent = p.label + (Object.keys(over).length ? ', edited' : '');
   $('pNote').textContent = p.note;
@@ -432,7 +443,7 @@ function changed(structural){
   document.documentElement.style.setProperty('--beam', mixWhite(col, 0.25));
   renderCode();
   const saved = Object.assign({}, over); for (const k in saved) if (/^audio/.test(k)) delete saved[k];
-  store.set('over', saved);
+  store.set('entry-over', saved);
 }
 function mixWhite(hex, t){
   const n = parseInt(hex.slice(1), 16); const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
@@ -442,11 +453,13 @@ function mixWhite(hex, t){
 }
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function attrList(){
-  const out = [['preset', presetId]];
+  const e = ENTRIES[presetId], pre = Object.assign({}, DEF, PRE[e.preset]), all = Object.assign({}, e.set, over);
+  const out = [['preset', e.preset]];
   for (const k of Object.keys(DEF)){
-    if (!(k in over)) continue;
+    if (!(k in all)) continue;
     if (k === 'paused') continue;
-    const v = over[k];
+    const v = all[k];
+    if (JSON.stringify(v) === JSON.stringify(pre[k])) continue;
     const a = ATTR[k] || k;
     if (k === 'audio'){ if (v) out.push([a, audioEmbed || String(v)]); continue; }
     if (typeof v === 'boolean'){ if (v) out.push([a, null]); else out.push([a, 'false']); }
@@ -547,9 +560,9 @@ buildPresets();
 buildControls();
 wireMusic();
 const hashId = (location.hash || '').slice(1);
-const saved = store.get('preset', 'silk');
-const start = PRE[hashId] ? hashId : (PRE[saved] ? saved : 'silk');
-if (start === saved && !PRE[hashId]) { const so = store.get('over', {}); if (so && typeof so === 'object') over = so; }
+const saved = store.get('entry', FIRST);
+const start = ENTRIES[hashId] ? hashId : (ENTRIES[saved] ? saved : FIRST);
+if (start === saved && !ENTRIES[hashId]) { const so = store.get('entry-over', {}); if (so && typeof so === 'object') over = so; }
 loadPreset(start, true);
 setPaused(false);
 const small = matchMedia('(max-width: 720px)').matches;
