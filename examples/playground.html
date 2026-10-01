@@ -126,7 +126,13 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(-
 .stats b{font-weight:400;color:var(--ink-2)}
 #show{position:fixed;z-index:3;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .toast{position:fixed;z-index:4;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:9px 12px;border-radius:3px;pointer-events:none}
-.hint-b{position:fixed;z-index:1;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font:400 10.5px/1.4 var(--mono);color:rgba(236,231,219,.6);text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
+.dock{position:fixed;z-index:3;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px}
+#mute{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;font-size:11px;background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#mute svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#mute[aria-pressed="true"]{background:var(--glass);color:var(--ink);border-color:var(--hair-2)}
+#mute .on,#mute[aria-pressed="true"] .off{display:inline}
+#mute .off,#mute[aria-pressed="true"] .on{display:none}
+.hint-b{font:400 10.5px/1.4 var(--mono);color:rgba(236,231,219,.6);text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
 body.panel-off .sample{right:0}
 @media (max-width:720px){
   #panel{top:auto;left:calc(8px + env(safe-area-inset-left,0px));right:calc(8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;height:min(52vh,480px)}
@@ -136,6 +142,7 @@ body.panel-off .sample{right:0}
   .placard .spec{margin-top:6px;padding-top:6px}
   .sample{right:0}
   .hint-b{display:none}
+  body:not(.panel-off) .dock{display:none}
 }
 @media (prefers-reduced-motion:reduce){.tog span{transition:none}}
 </style>
@@ -188,7 +195,10 @@ body.panel-off .sample{right:0}
   <div class="stats"><span id="stRays">—</span><span id="stState">—</span></div>
 </aside>
 <button type="button" class="tb" id="show" hidden>Controls</button>
-<div class="hint-b">Space pauses · H hides the panel</div>
+<div class="dock">
+  <button type="button" class="tb" id="mute" aria-pressed="false" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3h-2.5z"/><path class="on" d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8"/><path class="off" d="M11 6l4 4M15 6l-4 4"/></svg><span id="muteTxt">Mute</span></button>
+  <div class="hint-b">Space pauses · M mutes · H hides the panel</div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script id="caustic-light-src" src="../src/caustic-light.js"></script>
@@ -436,12 +446,13 @@ function changed(structural){
   $('sample').hidden = !local._sample;
   const p = ENTRIES[presetId];
   $('pNo').textContent = `Preset ${IDS.indexOf(presetId) + 1} of ${IDS.length}`;
-  $('pName').textContent = p.label + (Object.keys(over).length ? ', edited' : '');
+  $('pName').textContent = p.label + (Object.keys(over).some(k => !/^audio/.test(k)) ? ', edited' : '');
   $('pNote').textContent = p.note;
   $('pSpec').textContent = [o.surface, o.mode === 'reflect' ? 'mirror' : `n ${(+o.ior).toFixed(2)}`, `throw ${num(o.distance,2)}`, `relief ${num(o.relief,2)}`, o.dispersion > 0 ? `dispersion ${pct(o.dispersion)}` : null].filter(Boolean).join(' · ');
   const col = o.gradient ? toHex(o.gradient.split(' ').slice(-1)[0]) : toHex(o.color);
   document.documentElement.style.setProperty('--beam', mixWhite(col, 0.25));
   renderCode();
+  syncMute();
   const saved = Object.assign({}, over); for (const k in saved) if (/^audio/.test(k)) delete saved[k];
   store.set('entry-over', saved);
 }
@@ -513,32 +524,43 @@ window.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input,button,textarea,select,summary,pre')) return;
   if (e.code === 'Space'){ e.preventDefault(); setPaused(!paused); }
   else if (e.key === 'h' || e.key === 'H') setPanel(panel.hidden);
+  else if ((e.key === 'm' || e.key === 'M') && opts().audio) setMuted(!muted);
 });
 
 /* music */
-const DEMO_SRC = 'assets/ambient-loop.mp3', DEMO_EMBED = 'ambient-loop.mp3';
+const DEMO_SRC = 'assets/ambient-loop.mp3', DEMO_EMBED = 'ambient-loop.mp3', DEMO_LABEL = 'Demo: ambient loop, 2 min 38 s';
 let audioLabel = '', audioEmbed = '', objURL = null;
-function setTrack(src, label, embed, crossfade){
+function setTrack(src, label, embed, crossfade, play = true){
   if (objURL && objURL !== src){ URL.revokeObjectURL(objURL); objURL = null; }
   audioLabel = label; audioEmbed = embed;
   const o = {audio: src};
   if (crossfade != null) o.audioCrossfade = crossfade;
   for (const k in o) apply(k, o[k]);
   changed(true);
-  el.playAudio();
+  store.set('music', true);
+  if (play) el.playAudio();
 }
 function wireMusic(){
-$('mDemo').addEventListener('click', () => setTrack(DEMO_SRC, 'Demo: ambient loop, 2 min 38 s', DEMO_EMBED, 0.5));
+$('mDemo').addEventListener('click', () => setTrack(DEMO_SRC, DEMO_LABEL, DEMO_EMBED, 0.5));
 $('mFile').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0]; if (!f) return;
   objURL = URL.createObjectURL(f);
   setTrack(objURL, f.name, 'music/' + f.name, 4);
   e.target.value = '';
 });
-$('mNone').addEventListener('click', () => { el.pauseAudio(); ['audio', 'audioCrossfade'].forEach(k => { delete over[k]; }); el.setOptions({audio: ''}); audioLabel = ''; changed(true); });
+$('mNone').addEventListener('click', () => { el.pauseAudio(); ['audio', 'audioCrossfade', 'audioAutoplay'].forEach(k => { delete over[k]; }); el.setOptions({audio: '', audioAutoplay: false}); audioLabel = ''; store.set('music', false); changed(true); });
 $('mPlay').addEventListener('click', () => el.toggleAudio());
 }
-const syncPlay = () => { const on = el.audioPlaying; $('mPlay').textContent = on ? 'Pause' : 'Play'; $('mPlay').setAttribute('aria-pressed', String(on)); };
+let muted = store.get('muted', false);
+function syncMute(){
+  const b = $('mute'); b.hidden = !opts().audio;
+  b.setAttribute('aria-pressed', String(muted));
+  $('muteTxt').textContent = muted ? 'Unmute' : 'Mute';
+  b.title = muted ? 'Turn the music back on' : 'Turn the music off';
+}
+function setMuted(v){ muted = v; store.set('muted', v); if (v) el.pauseAudio(); else if (opts().audio) el.playAudio(); syncMute(); }
+$('mute').addEventListener('click', () => setMuted(!muted));
+const syncPlay = () => { const on = el.audioPlaying; if (!document.hidden && on === muted){ muted = !on; store.set('muted', muted); } syncMute(); $('mPlay').textContent = on ? 'Pause' : 'Play'; $('mPlay').setAttribute('aria-pressed', String(on)); };
 el.addEventListener('audio-play', syncPlay); el.addEventListener('audio-pause', syncPlay);
 el.addEventListener('caustic-error', e => { if (opts().audio) $('mName').textContent = `Couldn't play that file: ${e.detail && e.detail.message || e.detail}`; });
 setInterval(() => {
@@ -564,6 +586,17 @@ const saved = store.get('entry', FIRST);
 const start = ENTRIES[hashId] ? hashId : (ENTRIES[saved] ? saved : FIRST);
 if (start === saved && !ENTRIES[hashId]) { const so = store.get('entry-over', {}); if (so && typeof so === 'object') over = so; }
 loadPreset(start, true);
+// Browsers allow sound only after the visitor interacts, so the demo track starts on the first click, tap or key press.
+if (store.get('music', true)) setTrack(DEMO_SRC, DEMO_LABEL, DEMO_EMBED, 0.5, false);
+const GESTURES = ['pointerdown', 'keydown'];
+const onGesture = e => {
+  if (e.target.closest && e.target.closest('#mute,#mPlay,#mNone,#mDemo,label[for=mFile]')) return;
+  if (e.type === 'keydown' && (e.key === 'm' || e.key === 'M' || e.key === 'Tab' || e.key === 'Shift')) return;
+  GESTURES.forEach(t => window.removeEventListener(t, onGesture, true));
+  if (!muted && opts().audio && !el.audioPlaying) el.playAudio();
+};
+GESTURES.forEach(t => window.addEventListener(t, onGesture, true));
+syncMute();
 setPaused(false);
 const small = matchMedia('(max-width: 720px)').matches;
 setPanel(small ? false : store.get('panel', true));
