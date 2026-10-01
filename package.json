@@ -18,6 +18,14 @@
   ],
   "author": "Sacha",
   "license": "MIT",
+  "homepage": "https://sachaa.github.io/caustic-light/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sachaa/caustic-light.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sachaa/caustic-light/issues"
+  },
   "type": "commonjs",
   "main": "src/caustic-light.js",
   "browser": "dist/caustic-light.min.js",
