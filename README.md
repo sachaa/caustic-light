@@ -158,6 +158,16 @@ Off by default. Combine any of them in a space-separated list:
 Effects listen on the window, so they also work when the element has
 `pointer-events: none`. Ripples are skipped under `prefers-reduced-motion`.
 
+On touch screens a tap always works, but a finger drag scrolls the page by
+default, and the browser then stops reporting it. To let a drag move the
+effects, give the element `touch-action: none`. It must also receive the touch,
+so it can't have `pointer-events: none`. Do this only where the page doesn't
+need to scroll under the light, such as a full-screen background:
+
+```css
+caustic-light { touch-action: none; }
+```
+
 ### Music
 
 The light can follow a music track: louder passages brighten the light and

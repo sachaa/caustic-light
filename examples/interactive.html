@@ -8,7 +8,7 @@
   :root { color-scheme: dark; }
   html, body { height: 100%; }
   body { margin: 0; background: #0f4656; color: #fff; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
-  caustic-light { position: fixed; inset: 0; }
+  caustic-light { position: fixed; inset: 0; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   a.back { position: fixed; top: 16px; left: 16px; color: #fff; opacity: .75; font-size: 14px; }
   .panel { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(640px, calc(100vw - 32px));
            background: rgba(4, 20, 26, .62); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, .16); border-radius: 10px; padding: 14px 16px; }

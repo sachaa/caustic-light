@@ -32,7 +32,7 @@
 [hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font:400 13px/1.45 var(--ui);overflow:hidden;-webkit-font-smoothing:antialiased}
-#stage{position:fixed;inset:0;z-index:0}
+#stage{position:fixed;inset:0;z-index:0;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 .sample{position:fixed;z-index:1;left:0;top:0;bottom:0;right:360px;display:grid;place-content:center;justify-items:center;padding:0 24px;pointer-events:none;text-align:center}
 .sample .eyebrow{font:500 11px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:0 0 18px}
